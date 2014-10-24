@@ -6,8 +6,9 @@ log = logging.getLogger("kafka_comsumer")
 class KafkaConsumer():
     def __init__(self,kafka,topic):
         self.kafka=kafka
-        self.consumer = SimpleConsumer(self.kafka, "dcc_python",topic,auto_commit=False,auto_commit_every_n=1000)   
-        self.msg_queue = Queue.Queue(maxsize = 100000)
+        self.topic=topic
+        self.consumer = SimpleConsumer(self.kafka, "dcc_python",topic,auto_commit=False,auto_commit_every_n=100)   
+        self.msg_queue = Queue.Queue(maxsize =100000)
     
     def get_msg_queue(self):
         return self.msg_queue
@@ -16,7 +17,7 @@ class KafkaConsumer():
         while True:
             for message in self.consumer:
                 try:
-                    log.info(message.message) 
+                    log.info(self.topic,message.message) 
                     self.msg_queue.put_nowait(message.message)
                 except:
                     time.sleep(10)
