@@ -7,7 +7,7 @@ class KafkaConsumer():
     def __init__(self,kafka,topic):
         self.kafka=kafka
         self.topic=topic
-        self.consumer = SimpleConsumer(self.kafka, "dcc_python",topic,auto_commit=False,auto_commit_every_n=100)   
+        self.consumer = SimpleConsumer(self.kafka, "dcc_python_1",topic,auto_commit=False,auto_commit_every_n=100)   
         self.msg_queue = Queue.Queue(maxsize =100000)
     
     def get_msg_queue(self):

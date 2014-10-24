@@ -28,11 +28,11 @@ class MysqlLoader():
                 
                 items_len=len(items)
                 print 'items_len =',len(items)
-                if items_len>=5:
+                if items_len>=100:
                     self.commit_to_db(sql_prefix,items)
             except:
                 if len(items)==0:
-                    time.sleep(1)
+                    time.sleep(10)
                     continue
                 self.commit_to_db(sql_prefix,items)
                 
