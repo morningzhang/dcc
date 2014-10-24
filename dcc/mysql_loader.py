@@ -31,7 +31,7 @@ class MysqlLoader():
                     continue
                 values=[]
                 for k,v in items.items():
-                    values.append("('%s','%s',%s,%s,%s,%s,'%s','%s','%s','%s',%s)"%tuple(list(k.split('\u0001')).append(v)))
+                    values.append("('%s','%s',%s,%s,%s,%s,'%s','%s','%s','%s',%s)"%tuple(k.split(u'\x001').append(v)))
                 self.execute(sql_prefix+values.join(","))
                 items.clear()
                 time.sleep(100)
