@@ -14,7 +14,7 @@ class MysqlLoader():
         values 
         """%self.column
         
-        items={}
+        items={};mysql_idle_time=0
         while True:
             try:
                 message=queue.get_nowait()
@@ -28,13 +28,22 @@ class MysqlLoader():
                 if items_len>=100:
                     log.info('items_len = %d update database.',items_len)
                     self.commit_to_db(sql_prefix,items)
+                
+                mysql_idle_time=0
             except:
                 if len(items)==0:
                     log.info('no data,sleeping 10 seconds.')
                     time.sleep(10)
+                    #idle time
+                    mysql_idle_time+=10
+                    if mysql_idle_time>=3600:
+                        self.execute("select 0")
                     continue
+                
                 log.info('no data,items_len = %d update database.',len(items))
                 self.commit_to_db(sql_prefix,items)
+                
+                mysql_idle_time=0
                 
     def commit_to_db(self,sql_prefix,items):
             values=[]
@@ -64,7 +73,6 @@ class MysqlLoader():
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    
     class Message():
         def __init__(self,key,value):
             self.key=key
@@ -73,7 +81,6 @@ if __name__ == '__main__':
     queue=Queue.Queue(maxsize = 100000)
     for i in xrange(100):
         queue.put_nowait(Message("smaatou\x0011414119600u\x001www.local.com%du\x001269u\x0018083u\x001320u\x00150u\x001IAB1u\x001USAu\x001android"%i,"9426"))
-    
-    mysql_conn=MySQLdb.connect(host="172.20.0.56",user="ymdsp",passwd="123456",db="ymdsp",charset="utf8") 
-    loader=MysqlLoader(mysql_conn,'impression_count')
+
+    loader=MysqlLoader('impression_count')
     loader.load_from_queue(queue)
