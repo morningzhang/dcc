@@ -11,7 +11,7 @@ class MysqlLoader():
     def load_from_queue(self,queue):
         sql_prefix="""
         replace into dsp_realtime_cpm 
-        (`partner`,`hour_time`,`app_id`,`ad_id`,`creative_id`,`width`,`height`,`category`,`country`,`os`,`%s`) 
+        (`partner`,`hour_time`,`app_id`,`ad_id`,`creative_id`,`width`,`height`,`category`,`country`,`os`,`%s`,`update_time`) 
         values 
         """%self.column
         
@@ -41,7 +41,7 @@ class MysqlLoader():
             for k,v in items.items():
                     columns=k.split('u\x001')
                     columns.append(v)
-                    values.append("('%s',%s,'%s',%s,%s,%s,'%s','%s','%s','%s',%s)"%tuple(columns))
+                    values.append("('%s',%s,'%s',%s,%s,%s,'%s','%s','%s','%s',%s,unix_timestamp())"%tuple(columns))
             self.execute(sql_prefix+",".join(values))
             items.clear()
             time.sleep(100)
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     
     queue=Queue.Queue(maxsize = 100000)
     for i in xrange(100):
-        queue.put_nowait(Message("smaatou\x0011414119600u\x001www.local.comu\x001269u\x0018083u\x001320u\x00150u\x001IAB1u\x001USAu\x001android","9426"))
+        queue.put_nowait(Message("smaatou\x0011414119600u\x001www.local.com%du\x001269u\x0018083u\x001320u\x00150u\x001IAB1u\x001USAu\x001android"%i,"9426"))
     
     mysql_conn=MySQLdb.connect(host="172.20.0.56",user="ymdsp",passwd="123456",db="ymdsp",charset="utf8") 
     loader=MysqlLoader(mysql_conn,'impression_count')
