@@ -6,8 +6,7 @@ class MysqlLoader():
     def __init__(self,mysql_conn,column):
         self.mysql_conn=mysql_conn
         self.column=column  
-        
-        
+               
     def load_from_queue(self,queue):
         sql_prefix="""
         replace into dsp_realtime_cpm 
@@ -25,15 +24,16 @@ class MysqlLoader():
                         items[message.key]=message.value
                 except:
                     items[message.key]=message.value
-                
                 items_len=len(items)
-                print 'items_len =',len(items)
                 if items_len>=100:
+                    log.info('items_len = %d update database.',items_len)
                     self.commit_to_db(sql_prefix,items)
             except:
                 if len(items)==0:
+                    log.info('no data,sleeping 10 seconds.')
                     time.sleep(10)
                     continue
+                log.info('no data,items_len = %d update database.',len(items))
                 self.commit_to_db(sql_prefix,items)
                 
     def commit_to_db(self,sql_prefix,items):
@@ -44,39 +44,7 @@ class MysqlLoader():
                     values.append("('%s',%s,'%s',%s,%s,%s,'%s','%s','%s','%s',%s,unix_timestamp())"%tuple(columns))
             self.execute(sql_prefix+",".join(values))
             items.clear()
-            time.sleep(100)
-            
-    def a_load_from_queue(self,queue):
-        thread=threading.Thread(target=self.load_from_queue,args=(queue,))
-        thread.start()
-        return thread 
-            
-    def load_from_file(self,data_file):
-        sql="""
-             LOAD DATA LOCAL INFILE '%(data_file)s' INTO TABLE dsp_realtime_cpm CHARACTER SET utf8
-             FIELDS TERMINATED BY ',' 
-             OPTIONALLY ENCLOSED BY '\"' 
-             LINES TERMINATED BY '\n'
-             (partner 
-            ,app_id 
-            ,ad_id 
-            ,creative_id
-            ,width 
-            ,height 
-            ,category
-            ,country 
-            ,os 
-            ,hour_time
-            ,%(column)s) set updated_time=unix_timestamp();
-            """%{"data_file":data_file,"column":self.column}
-        
-        self.execute(sql)
-           
-    def a_load_from_file(self,data_file):
-        thread=threading.Thread(target=self.load_from_file,args=(data_file,))
-        thread.start()
-        return thread         
-                            
+                                
     def execute(self,sql):
         try:
             self.mysql_conn.begin()
@@ -90,6 +58,11 @@ class MysqlLoader():
         finally:
             self.mysql_conn.commit()
             
+    def a_load_from_queue(self,queue):
+        thread=threading.Thread(target=self.load_from_queue,args=(queue,))
+        thread.start()
+        return thread 
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     
