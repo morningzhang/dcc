@@ -3,8 +3,8 @@ import MySQLdb,Queue,logging,time,threading
 log = logging.getLogger("load_data")
 
 class MysqlLoader():
-    def __init__(self,mysql_conn,column):
-        self.mysql_conn=mysql_conn
+    def __init__(self,column):
+        self.mysql_conn=MySQLdb.connect(host="172.20.0.56",user="ymdsp",passwd="123456",db="ymdsp",charset="utf8") 
         self.column=column  
                
     def load_from_queue(self,queue):
@@ -52,11 +52,10 @@ class MysqlLoader():
             n=cursor.execute(sql) 
             log.info("effect %d rows."%n)
             cursor.close()
-        except Exception,e:
-            print e
-            self.mysql_conn.rollback()
-        finally:
             self.mysql_conn.commit()
+        except Exception,e:
+            log.error(e)
+            self.mysql_conn.rollback()
             
     def a_load_from_queue(self,queue):
         thread=threading.Thread(target=self.load_from_queue,args=(queue,))
