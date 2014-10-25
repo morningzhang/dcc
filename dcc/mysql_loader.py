@@ -61,7 +61,8 @@ class MysqlLoader():
             self.mysql_conn.commit()
         except Exception,e:
             log.error(e)
-            self.mysql_conn.rollback()
+            log.error("retry...")
+            self.execute(sql)
             
     def a_load_from_queue(self,queue):
         thread=threading.Thread(target=self.load_from_queue,args=(queue,))
