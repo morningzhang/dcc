@@ -6,7 +6,7 @@ class KafkaConsumer():
     def __init__(self,topic,group):
         self.kafka= kafka.KafkaClient("10.1.11.50:9092,10.1.11.51:9092,10.1.11.52:9092")
         self.topic=topic
-        self.consumer = kafka.MultiProcessConsumer(self.kafka, group,topic,auto_commit_every_n=100,auto_commit_every_t=1000,num_procs=2)   
+        self.consumer = kafka.SimpleConsumer(self.kafka, group,topic,auto_commit=False)   
         self.msg_queue = Queue.Queue(maxsize =100000)
     
     def get_msg_queue(self):
@@ -17,11 +17,9 @@ class KafkaConsumer():
             try:
                 for message in self.consumer:
                     try:
-                        log.info("topic=%s,offset=%d"%(self.topic,message.offset))
                         self.msg_queue.put_nowait(message.message)
                     except:
                         time.sleep(10)
-                        log.info("topic=%s,offset=%d"%(self.topic,message.offset))
                         self.msg_queue.put_nowait(message.message)
             except Exception,e:
                 log.error(e)
@@ -30,3 +28,17 @@ class KafkaConsumer():
         thread=threading.Thread(target=self.comsume)
         thread.start()
         return thread
+    
+if __name__ == '__main__':
+    logging.basicConfig(format='%(asctime)s - %(levelname)s  %(filename)s  [%(lineno)d]  %(threadName)s  %(message)s', datefmt='[%Y-%m-%d %H:%M:%S]',
+                level=logging.INFO)
+    
+    kc = KafkaConsumer("zhangliming_test", "test")
+    kc.a_comsume()
+    queue = kc.get_msg_queue()
+    while True:
+        try:
+            print queue.get_nowait()
+        except:
+            time.sleep(1)
+            continue
