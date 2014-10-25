@@ -4,7 +4,8 @@ log = logging.getLogger("load_data")
 
 class MysqlLoader():
     def __init__(self,column):
-        self.mysql_conn=MySQLdb.connect(host="127.0.0.1",user="root",passwd="111111",db="dsp_report",charset="utf8") 
+        #self.mysql_conn=MySQLdb.connect(host="127.0.0.1",user="root",passwd="111111",db="dsp_report",charset="utf8")
+        self.mysql_conn=MySQLdb.connect(host="172.20.0.56",user="ymdsp",passwd="123456",db="ymdsp",charset="utf8")  
         self.column=column  
                
     def load_from_queue(self,queue):
