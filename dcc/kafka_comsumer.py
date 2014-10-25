@@ -6,7 +6,7 @@ class KafkaConsumer():
     def __init__(self,topic,group):
         self.kafka= kafka.KafkaClient("10.1.11.50:9092,10.1.11.51:9092,10.1.11.52:9092")
         self.topic=topic
-        self.consumer = kafka.MultiProcessConsumer(self.kafka, group,topic,auto_commit=False,num_procs=2)   
+        self.consumer = kafka.MultiProcessConsumer(self.kafka, group,topic,auto_commit_every_n=100,auto_commit_every_t=1000,num_procs=2)   
         self.msg_queue = Queue.Queue(maxsize =100000)
     
     def get_msg_queue(self):
@@ -23,8 +23,6 @@ class KafkaConsumer():
                         time.sleep(10)
                         log.info("topic=%s,offset=%d"%(self.topic,message.offset))
                         self.msg_queue.put_nowait(message.message)
-                    finally:
-                        self.consumer.commit()
             except Exception,e:
                 log.error(e)
                     
