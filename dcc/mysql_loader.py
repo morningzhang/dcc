@@ -4,7 +4,7 @@ log = logging.getLogger("load_data")
 
 class MysqlLoader():
     def __init__(self,column):
-        self.mysql_conn=MySQLdb.connect(host="127.0.0.1",user="root",passwd="111111",db="dsp_report",charset="utf8")
+        self.mysql_conn=MySQLdb.connect(host="127.0.0.1",user="root",passwd="111111",db="dsp_report",charset="utf8") 
         self.column=column  
                
     def load_from_queue(self,queue):
@@ -14,46 +14,42 @@ class MysqlLoader():
         values 
         """%self.column
         
-        items={};mysql_idle_time=0
+        messages=[];mysql_idle_time=0
         while True:
             try:
                 message=queue.get_nowait()
-                try:
-                    value=items[message.key]
-                    if value<message.value:
-                        items[message.key]=message.value
-                except:
-                    items[message.key]=message.value
-                    
-                items_len=len(items)
-                if items_len>=100:
-                    log.info('items_len = %d update database.',items_len)
-                    self.commit_to_db(sql_prefix,items)
-                    items.clear()
+                messages.append(message)
+                msglen=len(messages)
+                if msglen>=100:
+                    log.info('items_len = %d update database.',msglen)
+                    self.commit_to_db(sql_prefix,messages)
+                    messages=[]
                     mysql_idle_time=0
             except:
-                if len(items)==0:
+                msglen=len(messages)
+                if msglen==0:
                     log.info('no data,sleeping 10 seconds.')
-                    time.sleep(10)
                     #idle time
                     mysql_idle_time+=10
                     if mysql_idle_time>=3600:
                         self.execute("select 0")
                         mysql_idle_time=0
+                    time.sleep(10)
                     continue
                 
-                log.info('no data,items_len = %d update database.',len(items))
-                self.commit_to_db(sql_prefix,items)
-                items.clear()
+                log.info('no data,items_len = %d update database.',msglen)
+                self.commit_to_db(sql_prefix,messages)
+                messages=[]
                 mysql_idle_time=0
                 
-    def commit_to_db(self,sql_prefix,items):
+    def commit_to_db(self,sql_prefix,messages):
             values=[]
-            for k,v in items.items():
-                    columns=k.split('u\x001')
-                    columns.append(v)
+            for message in messages:
+                    columns=message.key.split('u\x001')
+                    columns.append(message.value)
                     values.append("('%s',%s,'%s',%s,%s,%s,'%s','%s','%s','%s',%s,unix_timestamp())"%tuple(columns))
             self.execute(sql_prefix+",".join(values))
+            
                                 
     def execute(self,sql):
         try:
