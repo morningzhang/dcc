@@ -34,7 +34,7 @@ class MysqlLoader():
     def commit_db(self):
         while True:
             timestamp=self.get_60_timestamp()
-            for item in self.columndb.RangeIter(key_from = str(timestamp), key_to = str(timestamp)):
+            for item in self.columndb.RangeIter(key_from = str(timestamp-60), key_to = str(timestamp)):
                 columns=[]
                 columns.append(self.column)
                 columns.extend(item[0].split('u\x001')[1:])
@@ -47,7 +47,7 @@ class MysqlLoader():
                 values ('%s',%s,'%s',%s,%s,%s,%s,'%s','%s','%s',%s,unix_timestamp()) on duplicate key update %s=%s,updated_time=unix_timestamp()
                 """
                 self.execute(sql%tuple(columns))
-            time.sleep(30)
+            time.sleep(60)
             
                                 
     def execute(self,sql):
