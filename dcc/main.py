@@ -18,7 +18,7 @@ for topic in topics:
     threads.append(comsumer.a_comsume())
     loader=mysql_loader.MysqlLoader(topic[1])
     threads.append(loader.a_load_from_queue(comsumer.get_msg_queue()))
-    
+    threads.append(loader.a_commit_db())
 
 for thread in threads:
     thread.join()
