@@ -19,7 +19,7 @@ class MysqlLoader():
                 log.info('no data,sleeping 10 seconds.')
                 
     def put_to_columndb(self,message):
-        key="%su\x001%s"%(str(self.get_hour_timestamp()),message.key);
+        key="%su\x001%s"%(str(self.get_60_timestamp()),message.key);
         try:
             value = self.columndb.Get(key)
             if value < message.value:
@@ -27,14 +27,14 @@ class MysqlLoader():
         except:
             self.columndb.Put(key, message.value)
             
-    def get_hour_timestamp(self):
+    def get_60_timestamp(self):
         timestamp=int(time.time())
-        return timestamp-timestamp%3600
+        return timestamp-timestamp%60
     
     def commit_db(self):
         while True:
-            timestamp=self.get_hour_timestamp()
-            for item in self.columndb.RangeIter(key_from = str(timestamp-3600), key_to = str(timestamp+3600)):
+            timestamp=self.get_60_timestamp()
+            for item in self.columndb.RangeIter(key_from = str(timestamp), key_to = str(timestamp)):
                 columns=[]
                 columns.append(self.column)
                 columns.extend(item[0].split('u\x001')[1:])
