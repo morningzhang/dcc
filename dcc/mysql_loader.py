@@ -1,4 +1,4 @@
-import MySQLdb,Queue,logging,time,threading
+import MySQLdb,Queue,logging,time,threading,leveldb
 
 log = logging.getLogger("load_data")
 
@@ -6,50 +6,48 @@ class MysqlLoader():
     def __init__(self,column):
         #self.mysql_conn=MySQLdb.connect(host="127.0.0.1",user="root",passwd="111111",db="dsp_report",charset="utf8")
         self.mysql_conn=MySQLdb.connect(host="172.20.0.56",user="ymdsp",passwd="123456",db="ymdsp",charset="utf8")  
-        self.column=column  
+        self.column=column
+        self.columndb = leveldb.LevelDB(column)
                
     def load_from_queue(self,queue):
-        sql_prefix="""
-        replace into dsp_realtime_cpm 
-        (`partner`,`hour_time`,`app_id`,`ad_id`,`creative_id`,`width`,`height`,`category`,`country`,`os`,`%s`,`updated_time`) 
-        values 
-        """%self.column
-        
-        messages=[];mysql_idle_time=0
         while True:
             try:
                 message=queue.get_nowait()
-                messages.append(message)
-                msglen=len(messages)
-                if msglen>=100:
-                    log.info('items_len = %d update database.',msglen)
-                    self.commit_to_db(sql_prefix,messages)
-                    messages=[]
-                    mysql_idle_time=0
+                self.put_to_columndb(message)
             except:
-                msglen=len(messages)
-                if msglen==0:
-                    log.info('no data,sleeping 10 seconds.')
-                    #idle time
-                    mysql_idle_time+=10
-                    if mysql_idle_time>=3600:
-                        self.execute("select 0")
-                        mysql_idle_time=0
-                    time.sleep(10)
-                    continue
+                time.sleep(10)
+                log.info('no data,sleeping 10 seconds.')
                 
-                log.info('no data,items_len = %d update database.',msglen)
-                self.commit_to_db(sql_prefix,messages)
-                messages=[]
-                mysql_idle_time=0
-                
-    def commit_to_db(self,sql_prefix,messages):
-            values=[]
-            for message in messages:
-                    columns=message.key.split('u\x001')
-                    columns.append(message.value)
-                    values.append("('%s',%s,'%s',%s,%s,%s,'%s','%s','%s','%s',%s,unix_timestamp())"%tuple(columns))
-            self.execute(sql_prefix+",".join(values))
+    def put_to_columndb(self,message):
+        key="%su\x001%s"%(str(self.get_hour_timestamp()),message.key);
+        try:
+            value = self.columndb.Get(key)
+            if value < message.value:
+                self.columndb.Put(key, message.value)
+        except:
+            self.columndb.Put(key, message.value)
+            
+    def get_hour_timestamp(self):
+        timestamp=int(time.time())
+        return timestamp-timestamp%3600
+    
+    def commit_db(self):
+        while True:
+            timestamp=self.get_hour_timestamp()
+            for item in self.columndb.RangeIter(key_from = str(timestamp-3600), key_to = str(timestamp+3600)):
+                columns=[]
+                columns.append(self.column)
+                columns.extend(item[0].split('u\x001')[1:])
+                columns.append(item[1])
+                columns.append(self.column)
+                columns.append(item[1])
+                sql="""
+                insert into dsp_realtime_cpm 
+                (partner,hour_time,app_id,ad_id,creative_id,width,height,category,country,os,%s,updated_time) 
+                values ('%s',%s,'%s',%s,%s,%s,%s,'%s','%s','%s',%s,unix_timestamp()) on duplicate key update %s=%s,updated_time=unix_timestamp()
+                """
+                self.execute(sql%tuple(columns))
+            time.sleep(30)
             
                                 
     def execute(self,sql):
@@ -69,6 +67,11 @@ class MysqlLoader():
         thread=threading.Thread(target=self.load_from_queue,args=(queue,))
         thread.start()
         return thread 
+    
+    def a_commit_db(self):
+        thread=threading.Thread(target=self.commit_db)
+        thread.start()
+        return thread 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
@@ -79,7 +82,9 @@ if __name__ == '__main__':
     
     queue=Queue.Queue(maxsize = 100000)
     for i in xrange(100):
-        queue.put_nowait(Message("smaatou\x0011414119600u\x001www.local.com%du\x001269u\x0018083u\x001320u\x00150u\x001IAB1u\x001USAu\x001android"%i,"9426"))
+        queue.put_nowait(Message("smaatou\x0011414119600u\x001www.local.com%du\x001269u\x0018083u\x001320u\x00150u\x001IAB1u\x001USAu\x001android"%i,"8888"))
 
     loader=MysqlLoader('impression_count')
-    loader.load_from_queue(queue)
+    loader.a_load_from_queue(queue)
+    loader.a_commit_db()
+    
