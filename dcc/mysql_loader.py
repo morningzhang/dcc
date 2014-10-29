@@ -3,43 +3,43 @@ import MySQLdb,Queue,logging,time,threading,leveldb
 log = logging.getLogger("load_data")
 
 class MysqlLoader():
-    def __init__(self,column):
+    def __init__(self,topic):
         #self.mysql_conn=MySQLdb.connect(host="127.0.0.1",user="root",passwd="111111",db="dsp_report",charset="utf8")
         self.mysql_conn=MySQLdb.connect(host="172.20.0.56",user="ymdsp",passwd="123456",db="ymdsp",charset="utf8")  
-        self.column=column
-        self.columndb = leveldb.LevelDB(column)
+        self.topic=topic
+        self.topicdb = leveldb.LevelDB(topic)
                
     def load_from_queue(self,queue):
         while True:
             try:
                 message=queue.get_nowait()
-                self.put_to_columndb(message)
+                self.put_to_topicdb(message)
             except:
                 time.sleep(10)
                 log.info('no data,sleeping 10 seconds.')
                 
-    def put_to_columndb(self,message):
-        key="%su\x001%s"%(str(self.get_60_timestamp()),message.key);
+    def put_to_topicdb(self,message):
+        key="%su\x001%s"%(str(self.get_3600_timestamp()),message.key);
         try:
-            value = self.columndb.Get(key)
+            value = self.topicdb.Get(key)
             if value < message.value:
-                self.columndb.Put(key, message.value)
+                self.topicdb.Put(key, message.value)
         except:
-            self.columndb.Put(key, message.value)
+            self.topicdb.Put(key, message.value)
             
-    def get_60_timestamp(self):
+    def get_3600_timestamp(self):
         timestamp=int(time.time())
         return timestamp-timestamp%60
     
     def commit_db(self):
         while True:
-            timestamp=self.get_60_timestamp()
-            for item in self.columndb.RangeIter(key_from = str(timestamp-60), key_to = str(timestamp)):
+            timestamp=self.get_3600_timestamp()
+            for item in self.topicdb.RangeIter(key_from = str(timestamp-60), key_to = str(timestamp)):
                 columns=[]
-                columns.append(self.column)
+                columns.append(self.topic)
                 columns.extend(item[0].split('u\x001')[1:])
                 columns.append(item[1])
-                columns.append(self.column)
+                columns.append(self.topic)
                 columns.append(item[1])
                 sql="""
                 insert into dsp_realtime_cpm 

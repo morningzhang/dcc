@@ -29,7 +29,7 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s - %(levelname)s  %(filename)s  [%(lineno)d]  %(threadName)s  %(message)s', datefmt='[%Y-%m-%d %H:%M:%S]',
                 level=logging.INFO)
     
-    kp = KafkaProducer("dspclick", "test")
-    kafkalog = "[2014-10-27 12:43:53,437] {\"adId\":48,\"advertiserAppId\":\"\",\"appId\":\"11111\",\"auctionId\":\"%s\",\"category\":\"\",\"cb\":\"0.9136349444743246\",\"country\":\"CHN\",\"creativeId\":33,\"deviceId\":\"f3b32d2cf9bd7c89bc61d9f7bc5f2b15f5e087dc\",\"hash\":\"\",\"height\":50,\"ip\":\"223.104.9.109\",\"lat\":0,\"lng\":0,\"os\":\"ios\",\"partner\":\"smaato\",\"timeCost\":2,\"title\":\"click\",\"width\":320}\n";
+    kp = KafkaProducer("dspclick", "hbase_reader")
+    kafkalog = "[2014-10-28 12:43:53,437] {\"adId\":48,\"advertiserAppId\":\"\",\"appId\":\"11111\",\"auctionId\":\"%s\",\"category\":\"\",\"cb\":\"0.9136349444743246\",\"country\":\"CHN\",\"creativeId\":33,\"deviceId\":\"f3b32d2cf9bd7c89bc61d9f7bc5f2b15f5e087dc\",\"hash\":\"\",\"height\":50,\"ip\":\"223.104.9.109\",\"lat\":0,\"lng\":0,\"os\":\"ios\",\"partner\":\"smaato\",\"timeCost\":2,\"title\":\"click\",\"width\":320}\n";
     kp.send(kafkalog, 1000)
     kp.close()

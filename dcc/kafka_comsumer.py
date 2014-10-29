@@ -4,9 +4,7 @@ log = logging.getLogger("kafka_comsumer")
 
 class KafkaConsumer():
     def __init__(self,topic,group):
-        self.kafka= kafka.KafkaClient("10.1.11.50:9092,10.1.11.51:9092,10.1.11.52:9092")
-        self.topic=topic
-        self.consumer = kafka.SimpleConsumer(self.kafka, group,topic,auto_commit=False)   
+        self.consumer = kafka.SimpleConsumer(kafka.KafkaClient("10.1.11.50:9092,10.1.11.51:9092,10.1.11.52:9092"), group,topic,auto_commit=False)   
         self.msg_queue = Queue.Queue(maxsize =100000)
     
     def get_msg_queue(self):
@@ -33,7 +31,7 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s - %(levelname)s  %(filename)s  [%(lineno)d]  %(threadName)s  %(message)s', datefmt='[%Y-%m-%d %H:%M:%S]',
                 level=logging.INFO)
     
-    kc = KafkaConsumer("zhangliming_test", "test")
+    kc = KafkaConsumer("zhangliming_test", "hbase_reader")
     kc.a_comsume()
     queue = kc.get_msg_queue()
     while True:
