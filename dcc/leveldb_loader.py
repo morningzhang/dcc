@@ -1,10 +1,9 @@
 import Queue,logging,time,threading,leveldb
 
-log = logging.getLogger("load_data")
+log = logging.getLogger("leveldb_loader")
 
 class LeveldbLoader():
     def __init__(self,topic): 
-        self.topic=topic
         self.topicdb = leveldb.LevelDB(topic)
                
     def load_from_queue(self,queue):
@@ -22,13 +21,17 @@ class LeveldbLoader():
             value = self.topicdb.Get(key)
             if value < message.value:
                 self.topicdb.Put(key, message.value)
+                log.info(key,message.value)
         except:
             self.topicdb.Put(key, message.value)
+            log.info(key,message.value)
             
     def get_3600_timestamp(self):
         timestamp=int(time.time())
         return timestamp-timestamp%3600
     
+    def get_topicdb(self):
+        return self.topicdb
     
     def a_load_from_queue(self,queue):
         thread=threading.Thread(target=self.load_from_queue,args=(queue,))
@@ -46,6 +49,6 @@ if __name__ == '__main__':
     for i in xrange(100):
         queue.put_nowait(Message("smaatou\x0011414119600u\x001www.local.com%du\x001269u\x0018083u\x001320u\x00150u\x001IAB1u\x001USAu\x001android"%i,"8888"))
 
-    loader=LeveldbLoader('impression_count')
-    loader.a_load_from_queue(queue)
+    leveldbloader=LeveldbLoader('impression_count')
+    leveldbloader.a_load_from_queue(queue)
     
